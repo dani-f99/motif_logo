@@ -6,7 +6,7 @@
 --------------------------------------------------------------------------------
 
 
-# PROJECT: Clonal Selection Pressure Analysis
+# PROJECT: Amino Acid Motif Logo Maker
 
 ## 1. OVERVIEW
 This program aim is to visualize the amino acid usage bais across 
