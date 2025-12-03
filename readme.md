@@ -18,16 +18,16 @@ motifs across different conditions.
 ## 2. PREREQUISITES
 Please ensure the following python modules are installed:
 
-- Pandas 
-- NumPy 
-- Matplotlib 
-- logomaker
+- `Pandas`
+- `NumPy` 
+- `Matplotlib` 
+- `logomaker`
 
 
 ## 3. USAGE GUIDE
 1. Place the sequences dataset in the `input` folder. 
-2. Follow the steps illustrated in the 'motif_logo.ipynb' notebool. 
-3. Access the output figures via the 'output' folder.
+2. Follow the steps illustrated in the `motif_logo.ipynb` notebook. 
+3. Access the output figures via the `output` folder.
 
 
 ## 4. DIRECTORY STRUCTURE
