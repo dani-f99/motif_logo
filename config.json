@@ -1,0 +1,6 @@
+{
+"input_folder": "input",
+"output_folder": "output",
+"group_by": "ab_target",
+"split_subjects":"True"
+}
