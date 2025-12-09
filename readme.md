@@ -25,8 +25,12 @@ Please ensure the following python modules are installed:
 
 ## 3. USAGE GUIDE
 1. Congifgure the `congif.json` file (see section 4 - config).
-1. Place the sequences dataset in the `input` folder. 
-2. Follow the steps illustrated in the `motif_logo.ipynb` notebook. 
+   - Once the custom python modules will be loaded the script will initiate
+   the required folders and import the `congif.json` information into `config`
+   variable.
+1. Place the sequences dataset in the `input` folder (example file is provided). 
+2. Follow the steps illustrated in the `motif_logo.ipynb` notebook(example output 
+is provided). 
 3. Access the output figures via the `output` folder.
 
 
