@@ -149,7 +149,9 @@ class mlogo():
                                 figsize = (n_cols * 7, n_rows * 3))
         
         motif_data = []
+        unique_aa = np.delete(np.unique(list(helpers.codon_dic_updated.values())), 0)
         for i, ic in zip(self.cond_index, self.cond_matrix):
+            temp_metric = yaxis_metric
             index_col = i[0]
             index_row = i[1] 
 
@@ -165,37 +167,52 @@ class mlogo():
 
             ### Logomaker sequence aligment and matrix creation
             # Creation of the sequences the Matrix, to_type='probability' are other options.
-            ww_df = logomaker.alignment_to_matrix(sequences=temp_seqs, 
-                                                  to_type='counts', 
-                                                  characters_to_ignore=".-"
-                                                  )
+            aa_counts = logomaker.alignment_to_matrix(sequences=temp_seqs, 
+                                                      to_type='counts', 
+                                                      characters_to_ignore=".-"
+                                                     )
             
-            #
-            ww_df = ww_df.fillna(0)
-            ww_df = ww_df.clip(lower=0)
+            # Convert the count matrixto different matrix is needed (yaxis_metric argument)
+            if (temp_metric != "counts") & (temp_metric in ["probability", "weight", "information"]):
+                # There is a bug that prevent the transformation of counts matrix to information in some cases
+                try:
 
+                    og_rows = aa_counts[aa_counts.sum(axis=1) == 0]
+                    aa_counts = aa_counts[aa_counts.sum(axis=1) != 0]
 
-            if (yaxis_metric != "counts") & (yaxis_metric in ["probability", "weight", "information"]):
-                #try:
-                ww_df = logomaker.transform_matrix(ww_df, 
-                                                from_type='counts', 
-                                                to_type=yaxis_metric,
-                                                )
-                #except:
-                #    print(f"Error converting the counts df to {yaxis_metric} type. \nproblomatic dataframe saved to output folder")
-                #    path_error = f"{config["output_folder"]}\\error_df"
-                #    if os.path.exists(path_error) is False:
-                #        os.mkdir(path_error)
-                #    ww_df.to_csv(path_error + "\\motif_counts.csv")
+                    aa_metric = logomaker.transform_matrix(aa_counts, 
+                                                           from_type='counts', 
+                                                           to_type=yaxis_metric
+                                                            )
+                    
+                    aa_metric = pd.concat([aa_metric, og_rows]).sort_index()
+
+                except:
+                        print(f"Error converting the counts df to {temp_metric} - index = [{index_col},{index_row}] type. \nproblomatic dataframe saved to output folder")
+                        path_error = f"{config["output_folder"]}\\error_df_index"
+                        temp_metric = "counts"
+
+                        if os.path.exists(path_error) is False:
+                            os.mkdir(path_error)
+
+                        aa_metric.to_csv(path_error + f"\\motif_counts_[{index_col},{index_row}]_.csv")
 
             # Preparing motif dataset to be saved  
-            temp_data = ww_df.copy()
+            temp_data = aa_metric.reindex(columns=unique_aa).fillna(0)
             temp_data.index = temp_data.index.rename(f"[{str(index_row)}, {str(index_col)}")
             temp_data.index = list(range(aa_start+1, aa_end+1))
-            motif_data.append(temp_data)
+            temp_data["fig_index"] = f"[{index_row},{index_col}]"
+            
+            # If grouped by column or subject, add this information column to the dataframe
+            if isinstance(group_by_value, str):
+                temp_data[group_by_value] = gp_unique[index_col]
+            if subject_bool:
+                temp_data["subject"] = subj_unique[index_row]
+
+            motif_data.append(temp_data) # temp data
 
             ### Logomaker sub-plot creation
-            logo = logomaker.Logo(ww_df,
+            logo = logomaker.Logo(aa_metric,
                                   color_scheme='skylign_protein', # 'chemistry' colors by property (polar, acidic, etc.)
                                   vpad=.1,
                                   width=.8,
@@ -209,11 +226,11 @@ class mlogo():
 
             # Setting lables
             if_info = ""
-            if yaxis_metric == "information":
+            if temp_metric == "information":
                  if_info = " (Bits)"
                  logo.ax.set_ylim(0,4.5) # Defining y-limit if metrix = bits
 
-            logo.ax.set_ylabel(f"{yaxis_metric}{if_info}".capitalize(), fontsize=12) #y-lavbel
+            logo.ax.set_ylabel(f"{temp_metric}{if_info}".capitalize(), fontsize=12) #y-lavbel
             logo.ax.set_xlabel("Amino Acid Position", fontsize=12) #x-label
             logo.ax.set_title(f"", fontsize=14) #subplot label 
 
