@@ -75,6 +75,7 @@ class mlogo():
                     by : str, # "sequence" for somatic data or "germline" for germline data
                     aa_start: int,
                     aa_end: int,
+                    remove_pos : list = None,
                     fig_title : str = "",
                     save_fig : bool = True,
                     save_name : str = "",
@@ -83,7 +84,8 @@ class mlogo():
         by : str -> "sequence" or "germline" motif.
         aa_start : int -> Start of the amino acid motif, relative to the amino acid sequence start.
         aa_end : end -> End of the amino acid motif, relative to the amino acid sequence start.
-        fig_title : sttr -> Title of the output figure.
+        fig_title : str -> Title of the output figure.
+        remove_pos : list -> list of integers, this amino acid positions will be removed from the plot.
         save_fig : bool -> if True will save the figure into the output folder, as defined in congif.json.
         save_name : str -> Name of the output plot (file name).
         yaxis_metric -> Metric to be used in the plot y-axis: must be `counts`, `probability`, `weight`, or `information`.
@@ -172,6 +174,15 @@ class mlogo():
                                                       characters_to_ignore=".-"
                                                      )
             
+            # Chaning the index name to the amino acid positions
+            aa_counts.index = list(range(aa_start+1, aa_end+1))
+            if isinstance(remove_pos, list):
+                try:
+                    rem_pos = [int(i) for i in remove_pos]
+                    aa_counts = aa_counts[aa_counts.index.isin(rem_pos) == False]
+                except:
+                    print(f"> Failed to remove amino acid positions {remove_pos}, invalid argument input.")
+            
             # Convert the count matrixto different matrix is needed (yaxis_metric argument)
             if (temp_metric != "counts") & (temp_metric in ["probability", "weight", "information"]):
                 # There is a bug that prevent the transformation of counts matrix to information in some cases
@@ -200,7 +211,6 @@ class mlogo():
             # Preparing motif dataset to be saved  
             temp_data = aa_metric.reindex(columns=unique_aa).fillna(0)
             temp_data.index = temp_data.index.rename(f"[{str(index_row)}, {str(index_col)}")
-            temp_data.index = list(range(aa_start+1, aa_end+1))
             temp_data["fig_index"] = f"[{index_row},{index_col}]"
             
             # If grouped by column or subject, add this information column to the dataframe
@@ -210,6 +220,9 @@ class mlogo():
                 temp_data["subject"] = subj_unique[index_row]
 
             motif_data.append(temp_data) # temp data
+            
+            # Revising x-axis values for plotting
+            aa_metric.index = list(range(0, len(aa_metric)))
 
             ### Logomaker sub-plot creation
             logo = logomaker.Logo(aa_metric,
@@ -234,12 +247,11 @@ class mlogo():
             logo.ax.set_xlabel("Amino Acid Position", fontsize=12) #x-label
             logo.ax.set_title(f"", fontsize=14) #subplot label 
 
-            # x-axis labels 
-            range_aa = list(range(aa_start+1, aa_end+1)) #Define the positions you want to label.
-            tick_positions = list(range(0, len(range_aa)))
-            logo.ax.set_xticks(tick_positions) # Set the tick positions explicitly. 
-            logo.ax.set_xticklabels([str(i) for i in range_aa]) # Setting the labels
-    
+            # x-axis labels -> returning to original values of actual aa positions
+            aa_index = aa_counts.index.values
+            ticks_pos, tick_names = range(0, len(aa_index)), [str(i) for i in aa_index]
+            logo.ax.set_xticks(ticks_pos)
+            logo.ax.set_xticklabels(tick_names)
           
         ### Global figure properties
         # Set column titles (top row)
